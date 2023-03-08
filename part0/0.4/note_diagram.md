@@ -20,7 +20,7 @@ sequenceDiagram
     server-->>browser: sends the main.js file
     activate browser
     Note right of browser: parse the main.js file and execute the javascript code
-    browser->>Server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
     activate server
     server-->>browser: Send the JSON file containing the 100 notes
     
