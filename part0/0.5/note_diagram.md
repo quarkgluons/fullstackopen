@@ -12,7 +12,7 @@ sequenceDiagram
     activate server
     server-->>browser: send the css and javascript file
     activate browser
-    Note right of browser: parse and render the html and execute the loaded spa.js script
+    Note left of browser: parse and render the html and execute the loaded spa.js script
     browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
     activate server
     server-->>browser: Send the JSON file containing the 100 notes
