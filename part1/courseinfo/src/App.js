@@ -27,6 +27,7 @@ const Header = (props) => {
         <h1>{props.course}</h1>
     );
 }
+ 
 // const Counter = () => {
 //     const [counter, setCounter] = useState(0);
 //     console.log('rendering with counter value', counter);
