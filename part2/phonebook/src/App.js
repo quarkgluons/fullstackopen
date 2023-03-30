@@ -1,17 +1,32 @@
 import axios from 'axios'
 import { useState, useEffect } from 'react'
 
+import personServices from './services/persons';
+
 const PersonForm = ({ persons, setPersons }) => {
 
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('');
     const addPerson = (event) => {
         event.preventDefault();
-        if (persons.filter(person => person.name === newName).length > 0) {
-            alert(`${newName} is already added to phonebook`);
+        let personExist = persons.find(person => person.name === newName);
+        if (personExist !== undefined) {
+            if(window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+                personServices.update({ ...personExist, number: newNumber }).then(data => {
+                    setPersons(persons.map(person => person.id !== data.id ? person : data));
+                }).catch(response => {
+                    console.log(response)
+                    alert(`${response.message}`)
+                })
+    
+            }
             return;
         }
-        setPersons(persons.concat({ name: newName, number: newNumber }));
+
+        personServices.create({ name: newName, number: newNumber }).then(data => {
+            setPersons(persons.concat(data));    
+        });
+        
         setNewName('');
         setNewNumber('');
     }
@@ -38,9 +53,25 @@ const Filter = ({ filterPerson }) => {
         <div><input onChange={filterPerson} /></div>
     )
 }
-const Persons = ({ persons }) => {
+
+
+const Persons = ({ persons, setPersons }) => {
+    const deletePerson = id => {
+        console.log(`delete person with id ${id}`)
+        if(window.confirm(`Delete ${persons.find(x => x.id === id).name} ?`)) {
+            personServices.deletePerson(id).then(statusText => {
+                personServices.getAll().then(data => {
+                    setPersons(data);
+                })
+            }).catch(response => {
+                console.log(response)
+                alert(`${response.message}`)
+            });
+        }
+    }
     return (
-        persons.map(person => <div key={person.name}>{person.name} {person.number}</div>)
+        persons.map(person => <div key={person.name}>{person.name} {person.number}
+                              <button onClick={() => deletePerson(person.id)}>delete</button></div>)
     )
 }
 const App = () => {
@@ -49,10 +80,9 @@ const App = () => {
     console.log('rendering component with persons as: ', persons)
     useEffect(() => {
         console.log('fetching persons');
-        axios
-            .get("http://localhost:3001/persons")
-            .then(response => {
-                setPersons(response.data);
+        personServices.getAll()
+            .then(persons => {
+                setPersons(persons);
                 console.log('Received data');
             })
     }, [])
@@ -75,7 +105,7 @@ const App = () => {
             <Filter filterPerson={filterPerson} />
             <PersonForm persons={persons} setPersons={setPersons} />
             <h2>Numbers</h2>
-            <Persons persons={persons} />
+            <Persons persons={persons} setPersons={setPersons}/>
         </div>
     )
 }
