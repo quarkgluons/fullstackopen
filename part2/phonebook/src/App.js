@@ -1,6 +1,20 @@
-import { useState } from 'react'
+import axios from 'axios'
+import { useState, useEffect } from 'react'
 
-const PersonForm = ({ persons, addPerson, newName, newNumber, setNewName, setNewNumber }) => {
+const PersonForm = ({ persons, setPersons }) => {
+
+    const [newName, setNewName] = useState('')
+    const [newNumber, setNewNumber] = useState('');
+    const addPerson = (event) => {
+        event.preventDefault();
+        if (persons.filter(person => person.name === newName).length > 0) {
+            alert(`${newName} is already added to phonebook`);
+            return;
+        }
+        setPersons(persons.concat({ name: newName, number: newNumber }));
+        setNewName('');
+        setNewNumber('');
+    }
 
     return (
         <>
@@ -19,6 +33,7 @@ const PersonForm = ({ persons, addPerson, newName, newNumber, setNewName, setNew
 
 }
 const Filter = ({ filterPerson }) => {
+
     return (
         <div><input onChange={filterPerson} /></div>
     )
@@ -29,37 +44,36 @@ const Persons = ({ persons }) => {
     )
 }
 const App = () => {
-    const [persons, setPersons] = useState([
-        { name: 'Arto Hellas', number: '040-123456', id: 1 },
-        { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-        { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-        { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-    ])
-    const [newName, setNewName] = useState('')
-    const [newNumber, setNewNumber] = useState('');
 
-    const addPerson = (event) => {
-        event.preventDefault();
-        if (persons.filter(person => person.name === newName).length > 0) {
-            alert(`${newName} is already added to phonebook`);
-            return;
-        }
-        setPersons(persons.concat({ name: newName, number: newNumber }));
-        setNewName('');
-        setNewNumber('');
-    }
+    const [persons, setPersons] = useState([])
+    console.log('rendering component with persons as: ', persons)
+    useEffect(() => {
+        console.log('fetching persons');
+        axios
+            .get("http://localhost:3001/persons")
+            .then(response => {
+                setPersons(response.data);
+                console.log('Received data');
+            })
+    }, [])
 
-    const [search, setSearch] = useState('');
     const filterPerson = (event) => {
+        if (event.target.value === '') {
+            axios
+                .get("http://localhost:3001/persons")
+                .then(response => {
+                    setPersons(response.data);
+                    console.log('Received data');
+                })   
+        }
         setPersons(persons.filter(person => person.name.toLowerCase().includes(event.target.value.toLowerCase())));
     }
-
 
     return (
         <div>
             <h2>Phonebook</h2>
             <Filter filterPerson={filterPerson} />
-            <PersonForm persons={persons} addPerson={addPerson} newName={newName} newNumber={newNumber} setNewName={setNewName} setNewNumber={setNewNumber} />
+            <PersonForm persons={persons} setPersons={setPersons} />
             <h2>Numbers</h2>
             <Persons persons={persons} />
         </div>
