@@ -3,7 +3,49 @@ import { useState, useEffect } from 'react'
 
 import personServices from './services/persons';
 
-const PersonForm = ({ persons, setPersons }) => {
+const Notification = ({ message }) => {
+    console.log('message', message)
+    const style = {
+        color: 'green',
+        background: 'lightgrey',
+        fontSize: 20,
+        borderStyle: 'solid',
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 10
+    }
+    if (message === '') {
+        return null;
+    }
+
+    return (
+        <div style={style}>
+            {message}
+        </div>
+    )
+}
+const ErrorNotification = ({ message }) => {
+    console.log('message', message)
+    const style = {
+        color: 'red',
+        background: 'lightgrey',
+        fontSize: 20,
+        borderStyle: 'solid',
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 10
+    }
+    if (message === '') {
+        return null;
+    }
+
+    return (
+        <div style={style}>
+            {message}
+        </div>
+    )
+}
+const PersonForm = ({ persons, setPersons, setErrorNotification, setNotificationMessage}) => {
 
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('');
@@ -11,22 +53,31 @@ const PersonForm = ({ persons, setPersons }) => {
         event.preventDefault();
         let personExist = persons.find(person => person.name === newName);
         if (personExist !== undefined) {
-            if(window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+            if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
                 personServices.update({ ...personExist, number: newNumber }).then(data => {
                     setPersons(persons.map(person => person.id !== data.id ? person : data));
                 }).catch(response => {
                     console.log(response)
-                    alert(`${response.message}`)
+                    setErrorNotification(`Note ${newName} has already been removed from server`)
+                    setTimeout(() => {
+                        setErrorNotification('')
+                    }, 5000)
+                    // alert(`${response.message}`)
                 })
-    
+
             }
             return;
         }
 
-        personServices.create({ name: newName, number: newNumber }).then(data => {
-            setPersons(persons.concat(data));    
+        personServices.create({ name: newName, number: newNumber, setNotificationMessage }).then(data => {
+            setPersons(persons.concat(data));
+
+            setNotificationMessage(`Added ${newName}`)
+            setTimeout(() => {
+                setNotificationMessage('')
+            }, 5000)
         });
-        
+
         setNewName('');
         setNewNumber('');
     }
@@ -58,7 +109,7 @@ const Filter = ({ filterPerson }) => {
 const Persons = ({ persons, setPersons }) => {
     const deletePerson = id => {
         console.log(`delete person with id ${id}`)
-        if(window.confirm(`Delete ${persons.find(x => x.id === id).name} ?`)) {
+        if (window.confirm(`Delete ${persons.find(x => x.id === id).name} ?`)) {
             personServices.deletePerson(id).then(statusText => {
                 personServices.getAll().then(data => {
                     setPersons(data);
@@ -77,6 +128,8 @@ const Persons = ({ persons, setPersons }) => {
 const App = () => {
 
     const [persons, setPersons] = useState([])
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [errorNotification, setErrorNotification] = useState('');
     console.log('rendering component with persons as: ', persons)
     useEffect(() => {
         console.log('fetching persons');
@@ -94,7 +147,7 @@ const App = () => {
                 .then(response => {
                     setPersons(response.data);
                     console.log('Received data');
-                })   
+                })
         }
         setPersons(persons.filter(person => person.name.toLowerCase().includes(event.target.value.toLowerCase())));
     }
@@ -102,10 +155,13 @@ const App = () => {
     return (
         <div>
             <h2>Phonebook</h2>
+            <Notification message={notificationMessage} />
+            <ErrorNotification  message={errorNotification} />
             <Filter filterPerson={filterPerson} />
-            <PersonForm persons={persons} setPersons={setPersons} />
+            <PersonForm persons={persons} setPersons={setPersons} setNotificationMessage={setNotificationMessage}
+                        setErrorNotification={setErrorNotification}/>
             <h2>Numbers</h2>
-            <Persons persons={persons} setPersons={setPersons}/>
+            <Persons persons={persons} setPersons={setPersons} />
         </div>
     )
 }
